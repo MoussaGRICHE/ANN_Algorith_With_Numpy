@@ -1,1 +1,1 @@
-# ANN_Algorith_With_Numpy
+# ANN_Algorithm_With_Numpy
