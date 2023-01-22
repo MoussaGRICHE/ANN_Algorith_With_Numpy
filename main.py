@@ -1,6 +1,5 @@
 from Forward_Backward import *
 import pandas as pd
-import itertools
 from keras.datasets import mnist
 import numpy as np
 
@@ -28,37 +27,47 @@ y_test = np.array(y_test)
 
 
 ########################################################################################################################
-# The model parameters
+# The Model Architecture
 ########################################################################################################################
-HL = input('How many hidden layer do you want in you model: ')
-HL = int(HL)
+def Model_Architecture():
+    """
+    This function ask the user the number of hidden layers and the length of each hidden layer.
+    :return: It prints the model architecture and returns a list with the length of each hidden layer
+    """
+    HL = input('How many hidden layer do you want in you model: ')
+    HL = int(HL)
 
-NP=[]
-for i in range(HL):
-   NP.append(input("how many persoprton do you want in the hidden layer number"+" "+str(i+1)+" :"))
-NP=list(map(int, NP))
+    NP = []
+    for i in range(HL):
+        NP.append(input("how many persoprton do you want in the hidden layer number" + " " + str(i + 1) + " :"))
+    NP=list(map(int, NP))
+    ML = [x_train.shape[1]] + NP + [y_train.shape[1]]
 
-ML = [x_train.shape[1]]+NP+[y_train.shape[1]]
+    print('#####################################################################')
+    print('######################### Model Architecture #########################')
+    print('#####################################################################','\n')
 
-Model={}
-for i in range(len(ML)-1):
-   if i == 0:
-     Model[str(i+1)] = model_layer(ML[i], ML[i+1], "Input")
-     print ("l"+ str(i+1) + "= model_layer("+str(ML[i])+","+ str(ML[i+1])+"," " Input)")
-   elif i == max(range(len(ML)-1)):
-     Model[str(i+1)] = model_layer(ML[i], ML[i+1], "Output")
-     print ("l"+ str(i+1) + "= model_layer("+str(ML[i])+","+ str(ML[i+1])+"," " ""Output"")")
-   else:
-     Model[str(i+1)] = model_layer(ML[i], ML[i+1], "Hidden")
-     print ("l"+ str(i+1) + "= model_layer("+str(ML[i])+","+ str(ML[i+1])+"," " Hiden)")
+    for i in range(len(ML) - 1):
+        if i == 0:
+            print("l" + str(i + 1) + "= model_layer(" + str(ML[i]) + "," + str(ML[i + 1]) + "," " Input Layer)")
+        elif i == max(range(len(ML) - 1)):
+            print("l" + str(i + 1) + "= model_layer(" + str(ML[i]) + "," + str(ML[i + 1]) + "," " ""Output Layer"")")
+        else:
+            print("l" + str(i + 1) + "= model_layer(" + str(ML[i]) + "," + str(ML[i + 1]) + "," " Hidden Layer)")
+    print('#####################################################################','\n')
+    return NP
 
 
 ########################################################################################################################
 # The model training
 ########################################################################################################################
-
-
 def model_training(x, y):
+    """
+    This function trains the model by launching the weights_biases_init, Forward Propagation, Backward Propagation functions.
+    :param x: The input data
+    :param y: The target data
+    :return: The accuracy of the fitting which is calculated from the confusion matrix of the predicted results.
+    """
     batch_size = 128
     epochs = 10
     losss = []
@@ -71,39 +80,31 @@ def model_training(x, y):
         accuracy = 0
         M = {}
         for i in range(x.shape[0]):
-            for j in range(len(Model)):
-                if (j == 0):
-                    M[str(j+1)] = Model[str(j+1)].Forward_Propagation(x[i].reshape(1, -1))
-                else:
-                    M[str(j + 1)] = Model[str(j+1)].Forward_Propagation(M[str(j)])
+            Model.weights_biases_init()
 
-            for k in reversed(range(len(Model))):
-                if (k == len(Model)-1):
-                    Model[str(k+1)].Backward_Propagation(y[i])
-                else:
-                    Model[str(k+1)].Backward_Propagation(next_layer_gamma=Model[str(k+2)].gamma, next_layer_weights=Model[str(k+2)].weights)
+            Model.Forward_Propagation(x[i])
 
+            Model.Backward_Propagation(y[i])
 
-            error = np.mean(Model[str(len(Model))].error**2)
+            error = np.mean(Model.output_error**2)
             error_list.append(error)
 
             if seen_points % batch_size == 0:
-                for s in reversed(range(len(Model))):
-                    Model[str(s + 1)].Adam()
+                Model.Adam()
+
+            CM = Confusion_Matrix (y[i], Model.output_values)
+
+            for o in range(len(Con_Mat)-1):
+                for v in range(len(CM)-1):
+                    Con_Mat[o][v] = Con_Mat[o][v] + CM[o][v]
 
 
-            CM = np.array(Confusion_Matrix (y[i], list(itertools.chain.from_iterable(Model[str(len(Model))].output))))
-            for o in range(len(y[i])):
-                for p in range(len(y[i])):
-                    Con_Mat[o][p] += CM[o][p]
-
-            seen_points += 1
-        los = sum(error_list) / x.shape[0] / batch_size
+        loss = sum(error_list) / x.shape[0] / batch_size
 
         losss.append(error)
         accuracy = float(np.trace(Con_Mat)) / (len(y))
 
-        print("Epochs:", ep + 1, "/", epochs, "[=======================] - loss:", los, "- acc :", accuracy)
+        print("Epochs:", ep + 1, "/", epochs, "[=======================] - loss:", loss, "- acc :", accuracy)
 
     return losss, accuracy
 
@@ -111,5 +112,7 @@ def model_training(x, y):
 # The model execution
 ########################################################################################################################
 if __name__ == "__main__":
-    parameter = model_parameter(x_train, y_train, NP)
+    Architecture = Model_Architecture()
+    parameter = model_parameter(x_train, y_train, Architecture)
+    Model = model_layer(x_train.shape[1], Architecture, y_train.shape[1])
     Results = model_training(x_train, y_train)

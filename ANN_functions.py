@@ -18,7 +18,7 @@ def Softmax_der(x):  # Softmax derivative
     return Softmax(x) * (x - (x * Softmax(x).sum()))
 
 def weight_initialization(input_shape, output_shape):
-    W = np.random.rand(input_shape, output_shape) * np.sqrt(2/(input_shape + output_shape))
+    W = np.random.rand(input_shape, output_shape) * np.sqrt(2 / (input_shape + output_shape))
     return W
 
 def Cross_Entropy(y_true, y_pred):
@@ -28,20 +28,25 @@ def Cross_Entropy(y_true, y_pred):
 
 def Confusion_Matrix(y_true, y_pred):
     # confusion matrix
-    categories = set(y_true) | set(y_pred)
+    num_categories = len(y_true)
+    y_true = np.ndarray.tolist(y_true)
+    y_pred = np.ndarray.tolist(y_pred)
+    # Create an empty confusion matrix
+    confusion_matrix = np.zeros((num_categories, num_categories))
 
-    # Initializing the confusion matrix with zeroes
-    confusion_matrix = np.zeros((len(categories), len(categories)))
-
+    # Fill the confusion matrix with counts
     for i in range(len(y_true)):
-            if int(y_true[i]) == 1 and float(y_pred[i]) >= 0.5:
-                confusion_matrix[i,i] += 1
+        if int(y_true[i]) == 1 and float(y_pred[i]) >= 0.6:
+            confusion_matrix[i, i] += 1
     return confusion_matrix
 
 
 
 def model_parameter(x, y, NP):
     t=[x.shape[1]] + NP + [y.shape[1]]
+    print('#####################################################################')
+    print('######################### Model Parameters  #########################')
+    print('#####################################################################','\n')
     print('The total number of parameters required can be computed as follows:')
     for i in range(len(t)-1):
       par = t[i] * t[i+1] + t[i+1]
@@ -50,4 +55,6 @@ def model_parameter(x, y, NP):
       elif i !=i+1 and i !=len(t)-2:
         print("From Dense layer number" +" " + str(i) +" "+ "to the Dense layer number"+" "+ str(i+1)+":", par)
       else:
-        print("From Dense layer number"+" "+ str(i) +" "+ "to the output layer :", par)
+        print("From Dense layer number"+" "+ str(i) +" "+ "to the output layer :", par, '\n')
+
+    print('#####################################################################', '\n')
